@@ -1,23 +1,44 @@
-import configparser
+from configparser import ConfigParser
 import os
 from datetime import datetime
 from typing import List
-
+import requests
 import pandas as pd
 from binance import Client
 from pandas import DataFrame as df
+import json
+
 
 api_key = os.environ.get("BINANCE_API_KEY")
 api_secret = os.environ.get("BINANCE_API_SECRET")
+slack_url = os.environ.get("SLACK_URL")
 
 HEADER_MAP = ("open_time", "open", "high", "low", "close", "volume", "close_time", "txn")
 READABLE_DT = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("%Y-%m-%d %H:%M")
 SCHEDULE = {Client.KLINE_INTERVAL_4HOUR: [3, 7, 11, 15, 19, 23]}
 
 
+class Report:
+    def __init__(self, slack_url: str) -> None:
+        self.params = {
+            "url": slack_url,
+            "headers": {
+                "Content-Type": "application/json",
+            },
+        }
+
+    def put_message(self, message) -> bool:
+        res = requests.post(
+            **self.params,
+            data=json.dumps({
+                "text": message,
+            })
+        )
+        return res.status_code == 200
+
 class Config:
     def __init__(self, config_file: str):
-        self.config = configparser.ConfigParser()
+        self.config = ConfigParser()
         self.config.read(config_file)
 
     def get_symbols(self) -> List[str]:
@@ -25,7 +46,7 @@ class Config:
 
 
 class SignalClient:
-    def __init__(self, api_key: str, api_secret: str) -> None:
+    def __init__(self, api_key: str, api_secret: str):
         self.client = Client(api_key, api_secret)
 
     def load_data(
@@ -63,13 +84,9 @@ class SignalClient:
 
 
 if __name__ == "__main__":
-    cli = SignalClient(
-        api_key=api_key,
-        api_secret=api_secret,
-    )
-    cfg = Config(
-        config_file="config.ini",
-    )
+    cli = SignalClient(api_key, api_secret)
+    cfg = Config("config.ini")
+    rpt = Report(slack_url)
 
     symbols = cfg.get_symbols()
     current = datetime.now()
@@ -78,4 +95,5 @@ if __name__ == "__main__":
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
         if result["open_time"].iat[-1] > current:
-            print(f"bullish symbol: {symbol}")
+            if ((result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]):
+                rpt.put_message(f"Bullish symbol: {symbol}")

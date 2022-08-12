@@ -1,3 +1,4 @@
 pandas
 finta
 python-binance
+requests
