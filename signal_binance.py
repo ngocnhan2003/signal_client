@@ -14,8 +14,7 @@ api_secret = os.environ.get("BINANCE_API_SECRET")
 slack_url = os.environ.get("SLACK_URL")
 
 HEADER_MAP = ("open_time", "open", "high", "low", "close", "volume", "close_time", "txn")
-READABLE_DT = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("%Y-%m-%d %H:%M")
-SCHEDULE = {Client.KLINE_INTERVAL_4HOUR: [3, 7, 11, 15, 19, 23]}
+readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("%Y-%m-%d %H:%M")
 
 
 class Report:
@@ -74,7 +73,6 @@ class SignalClient:
         column: str = "close",
         adjust: bool = True,
     ) -> df:
-
         EMA_fast = pd.Series(
             ohlc[column].ewm(ignore_na=False, span=period_fast, adjust=adjust).mean(),
             name="EMA_fast",
@@ -107,4 +105,5 @@ if __name__ == "__main__":
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
         if (result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]:
-            rpt.put_message(f"Bullish symbol: {symbol}")
+            ot = readable_dt(result["open_time"].iat[-1])
+            rpt.put_message(f"Bullish: {symbol} [{ot}]")
