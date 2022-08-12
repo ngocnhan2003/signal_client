@@ -1,26 +1,27 @@
+import configparser
+import os
 from datetime import datetime
+from typing import List
 
 import pandas as pd
 from binance import Client
 from pandas import DataFrame as df
 
-api_key = ""
-api_secret = ""
+api_key = os.environ.get("BINANCE_API_KEY")
+api_secret = os.environ.get("BINANCE_API_SECRET")
 
-HEADER_MAP = (
-    "open_time",
-    "open",
-    "high",
-    "low",
-    "close",
-    "volume",
-    "close_time",
-    "txn",
-)
+HEADER_MAP = ("open_time", "open", "high", "low", "close", "volume", "close_time", "txn")
 READABLE_DT = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("%Y-%m-%d %H:%M")
-SCHEDULE = {
-    Client.KLINE_INTERVAL_4HOUR: [3, 7, 11, 15, 19, 23],
-}
+SCHEDULE = {Client.KLINE_INTERVAL_4HOUR: [3, 7, 11, 15, 19, 23]}
+
+
+class Config:
+    def __init__(self, config_file: str):
+        self.config = configparser.ConfigParser()
+        self.config.read(config_file)
+
+    def get_symbols(self) -> List[str]:
+        return self.config["scanner"]["symbols"]
 
 
 class SignalClient:
@@ -46,7 +47,7 @@ class SignalClient:
         column: str = "close",
         adjust: bool = True,
     ) -> df:
-        
+
         EMA_fast = pd.Series(
             ohlc[column].ewm(ignore_na=False, span=period_fast, adjust=adjust).mean(),
             name="EMA_fast",
@@ -66,13 +67,15 @@ if __name__ == "__main__":
         api_key=api_key,
         api_secret=api_secret,
     )
-    scan_coins = [
-        "OPUSDT",
-    ]
-    ohlc_list = {}
+    cfg = Config(
+        config_file="config.ini",
+    )
+
+    symbols = cfg.get_symbols()
     current = datetime.now()
-    for symbol in set(scan_coins):
-        ohlc_list[symbol] = cli.load_data(symbol=symbol)
-        result = cli.MACD(ohlc_list[symbol])
+
+    for symbol in set(symbols):
+        ohlc = cli.load_data(symbol=symbol)
+        result = cli.MACD(ohlc)
         if result["open_time"].iat[-1] > current:
             print(f"bullish symbol: {symbol}")
