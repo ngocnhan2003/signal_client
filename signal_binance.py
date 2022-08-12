@@ -106,6 +106,5 @@ if __name__ == "__main__":
     for symbol in set(symbols):
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
-        if result["open_time"].iat[-1] > current:
-            if (result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]:
-                rpt.put_message(f"Bullish symbol: {symbol}")
+        if (result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]:
+            rpt.put_message(f"Bullish symbol: {symbol}")
