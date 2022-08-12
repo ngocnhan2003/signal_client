@@ -29,4 +29,4 @@ jobs:
           BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
           SLACK_URL: ${{ secrets.SLACK_URL }}
       run: |
-        python signal.py
+        python signal_binance.py
