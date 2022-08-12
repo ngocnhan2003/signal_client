@@ -1,13 +1,13 @@
-from configparser import ConfigParser
+import json
 import os
+from configparser import ConfigParser
 from datetime import datetime
 from typing import List
-import requests
+
 import pandas as pd
+import requests
 from binance import Client
 from pandas import DataFrame as df
-import json
-
 
 api_key = os.environ.get("BINANCE_API_KEY")
 api_secret = os.environ.get("BINANCE_API_SECRET")
@@ -30,11 +30,14 @@ class Report:
     def put_message(self, message) -> bool:
         res = requests.post(
             **self.params,
-            data=json.dumps({
-                "text": message,
-            })
+            data=json.dumps(
+                {
+                    "text": message,
+                }
+            ),
         )
         return res.status_code == 200
+
 
 class Config:
     def __init__(self, config_file: str):
@@ -50,7 +53,10 @@ class SignalClient:
         self.client = Client(api_key, api_secret)
 
     def load_data(
-        self, symbol: str, interval: str = Client.KLINE_INTERVAL_4HOUR, start_str: str = "26 day ago UTC"
+        self,
+        symbol: str,
+        interval: str = Client.KLINE_INTERVAL_4HOUR,
+        start_str: str = "26 day ago UTC",
     ) -> df:
         klines = self.client.get_historical_klines(
             symbol=symbol,
@@ -77,8 +83,14 @@ class SignalClient:
             ohlc[column].ewm(ignore_na=False, span=period_slow, adjust=adjust).mean(),
             name="EMA_slow",
         )
-        MACD = pd.Series(EMA_fast - EMA_slow, name="MACD")
-        MACD_signal = pd.Series(MACD.ewm(ignore_na=False, span=signal, adjust=adjust).mean(), name="SIGNAL")
+        MACD = pd.Series(
+            EMA_fast - EMA_slow,
+            name="MACD",
+        )
+        MACD_signal = pd.Series(
+            MACD.ewm(ignore_na=False, span=signal, adjust=adjust).mean(),
+            name="SIGNAL",
+        )
         # open_time = ohlc["open_time"].apply(READABLE_DT)
         return pd.concat([ohlc["open_time"], MACD, MACD_signal], axis=1)
 
@@ -95,5 +107,5 @@ if __name__ == "__main__":
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
         if result["open_time"].iat[-1] > current:
-            if ((result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]):
+            if (result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]:
                 rpt.put_message(f"Bullish symbol: {symbol}")
