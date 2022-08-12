@@ -45,7 +45,7 @@ class Config:
         self.config.read(config_file)
 
     def get_symbols(self) -> List[str]:
-        return self.config["scanner"]["symbols"]
+        return self.config["scanner"]["symbols"].split(",")
 
 
 class SignalClient:
