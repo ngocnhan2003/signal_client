@@ -99,11 +99,13 @@ if __name__ == "__main__":
     rpt = Report(slack_url)
 
     symbols = cfg.get_symbols()
-    current = datetime.now()
 
     for symbol in set(symbols):
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
-        if (result["MACD"] > result["SIGNAL"]).tail(2).tolist() == [False, True]:
-            ot = readable_dt(result["open_time"].iat[-1])
-            rpt.put_message(f"Bullish: {symbol} [{ot}]")
+        open_time = readable_dt(result["open_time"].iat[-1])
+        last_values = result["MACD"] > result["SIGNAL"]).tail(2).tolist()
+        if (last_values == [False, True]:
+            rpt.put_message(f"Bullish 4h: {symbol} [{open_time}]")
+        elif last_values == [True, False]:
+            rpt.put_message(f"Bearish 4h: {symbol} [{open_time}]")
