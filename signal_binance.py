@@ -104,8 +104,8 @@ if __name__ == "__main__":
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
         open_time = readable_dt(result["open_time"].iat[-1])
-        last_values = result["MACD"] > result["SIGNAL"]).tail(2).tolist()
-        if (last_values == [False, True]:
+        last_values = (result["MACD"] > result["SIGNAL"]).tail(2).tolist()
+        if last_values == [False, True]:
             rpt.put_message(f"Bullish 4h: {symbol} [{open_time}]")
         elif last_values == [True, False]:
             rpt.put_message(f"Bearish 4h: {symbol} [{open_time}]")
