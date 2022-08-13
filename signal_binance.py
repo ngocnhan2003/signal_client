@@ -112,6 +112,6 @@ if __name__ == "__main__":
         last_values = tuple((result["MACD"] > result["SIGNAL"]).tail(2))
 
         if message := ruler.get(last_values):
-            message += f" 🕑 {open_time}: {symbol}"
+            message += f" {symbol}\n🕑 {open_time}"
             rpt.put_message(message)
             print(message)
