@@ -1,7 +1,7 @@
 import json
 import os
 from configparser import ConfigParser
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import pandas as pd
@@ -14,8 +14,13 @@ api_secret = os.environ.get("BINANCE_API_SECRET")
 slack_url = os.environ.get("SLACK_URL")
 
 HEADER_MAP = ("open_time", "open", "high", "low", "close", "volume", "close_time", "txn")
-readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("%Y-%m-%d %H:%M")
+VNT = timezone(timedelta(hours=+7), "VNT")
 
+readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).astimezone(VNT).strftime("%Y-%m-%d %H:%M")
+ruler = {
+    (False, True): "🟢 BULLISH",
+    (True, False): "🔴 BEARISH",
+}
 
 class Report:
     def __init__(self, slack_url: str) -> None:
@@ -104,8 +109,9 @@ if __name__ == "__main__":
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
         open_time = readable_dt(result["open_time"].iat[-1])
-        last_values = (result["MACD"] > result["SIGNAL"]).tail(2).tolist()
-        if last_values == [False, True]:
-            rpt.put_message(f"Bullish 4h: {symbol} [{open_time}]")
-        elif last_values == [True, False]:
-            rpt.put_message(f"Bearish 4h: {symbol} [{open_time}]")
+        last_values = tuple((result["MACD"] > result["SIGNAL"]).tail(2))
+
+        if message := ruler.get(last_values):
+            message += f" 🕑 {open_time}: {symbol}"
+            rpt.put_message(message)
+            print(message)
