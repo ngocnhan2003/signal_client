@@ -16,8 +16,7 @@ slack_url = os.environ.get("SLACK_URL")
 HEADER_MAP = ("open_time", "open", "high", "low", "close", "volume", "close_time", "txn")
 VNT = timezone(timedelta(hours=+7), "VNT")
 
-# readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).astimezone(VNT).strftime("%Y-%m-%d %H:%M")
-readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("🗓 %Y-%m-%d 🕑 %H:%M")
+readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).astimezone(VNT).strftime("%Y-%m-%d %H:%M")
 ruler = {
     (False, True): "🟢 BULLISH",
     (True, False): "🔴 BEARISH",
