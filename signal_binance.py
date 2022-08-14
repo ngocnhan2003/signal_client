@@ -16,7 +16,8 @@ slack_url = os.environ.get("SLACK_URL")
 HEADER_MAP = ("open_time", "open", "high", "low", "close", "volume", "close_time", "txn")
 VNT = timezone(timedelta(hours=+7), "VNT")
 
-readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).astimezone(VNT).strftime("%Y-%m-%d %H:%M")
+# readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).astimezone(VNT).strftime("%Y-%m-%d %H:%M")
+readable_dt = lambda ts: datetime.fromtimestamp(ts // 1000).strftime("🗓 %Y-%m-%d 🕑 %H:%M")
 ruler = {
     (False, True): "🟢 BULLISH",
     (True, False): "🔴 BEARISH",
@@ -60,12 +61,12 @@ class SignalClient:
         self,
         symbol: str,
         interval: str = Client.KLINE_INTERVAL_4HOUR,
-        start_str: str = "26 day ago UTC",
+        limit: int = 104,
     ) -> df:
         klines = self.client.get_historical_klines(
             symbol=symbol,
             interval=interval,
-            start_str=start_str,
+            limit=limit,
         )
         return df.from_dict([{k: v for k, v in zip(HEADER_MAP, item)} for item in klines])
 
@@ -112,6 +113,6 @@ if __name__ == "__main__":
         last_values = tuple((result["MACD"] > result["SIGNAL"]).tail(2))
 
         if message := ruler.get(last_values):
-            message += f" {symbol}\n🕑 {open_time}"
+            message += f" ❖ {symbol}\n{open_time}"
             rpt.put_message(message)
             print(message)
