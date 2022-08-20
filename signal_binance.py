@@ -108,10 +108,11 @@ if __name__ == "__main__":
     for symbol in set(symbols):
         ohlc = cli.load_data(symbol=symbol)
         result = cli.MACD(ohlc)
-        open_time = readable_dt(result["open_time"].iat[-1])
         last_values = tuple((result["MACD"] > result["SIGNAL"]).tail(2))
 
         if message := ruler.get(last_values):
-            message += f" ❖ {symbol}\n{open_time}"
+            open_time = readable_dt(result["open_time"].iat[-1])
+            close = readable_dt(result["close"].iat[-1])
+            message += f" ❖ {symbol} ${close}\n{open_time}"
             rpt.put_message(message)
             print(message)
