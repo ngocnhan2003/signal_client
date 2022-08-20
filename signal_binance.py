@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
         if message := ruler.get(last_values):
             open_time = readable_dt(result["open_time"].iat[-1])
-            close = result["close"].iat[-1]
+            close = ohlc["close"].iat[-1]
             message += f" ❖ {symbol} ${close}\n{open_time}"
             rpt.put_message(message)
             print(message)
